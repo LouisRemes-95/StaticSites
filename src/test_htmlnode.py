@@ -3,7 +3,7 @@ from unittest.mock import patch
 from io import StringIO
 
 
-from htmlnode import HTMLNode, LeafNode
+from htmlnode import HTMLNode, LeafNode, ParentNode
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -39,7 +39,29 @@ class TestHTMLNode(unittest.TestCase):
     def test_leaf_to_html_no_tag(self):
         node = LeafNode(None, "Click me!", {"href": "https://www.google.com"})
         self.assertEqual(node.to_html(), "Click me!")
-        
+
+    def test_leaf_to_html_no_value(self):
+        node = LeafNode(None, None)
+        with self.assertRaises(ValueError):
+            node.to_html()
+
+    def test_parent_to_html(self):
+        node = ParentNode("p",
+        [
+        LeafNode("b", "Bold text"),
+        LeafNode(None, "Normal text"),
+        LeafNode("i", "italic text"),
+        LeafNode(None, "Normal text"),
+        ],)
+        self.assertEqual(node.to_html(), "<p><b>Bold text</b>Normal text<i>italic text</i>Normal text</p>")
+
+    def test_parent_to_html_props(self):
+        node = ParentNode("p",
+        [
+        LeafNode("b", "Bold text"),
+        LeafNode(None, "Normal text"),
+        ], {"href": "https://www.google.com", "target": "_blank"})
+        self.assertEqual(node.to_html(), '<p href="https://www.google.com" target="_blank"><b>Bold text</b>Normal text</p>')
 
 if __name__ == "__main__":
     unittest.main()
