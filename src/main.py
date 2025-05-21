@@ -1,8 +1,8 @@
 from textnode import TextNode, TextType
-from htmlnode import HTMLNode
+from htmlnode import HTMLNode, LeafNode
 
 def main():
-    html_node = HTMLNode("a", "This is some text", props = {"href": "https://www.google.com", "target": "_blank"})
-    print(html_node.props_to_html())
+    node = LeafNode("a", "Click me!", {"href": "https://www.google.com"})
+    print(node.to_html())
 
 main()
