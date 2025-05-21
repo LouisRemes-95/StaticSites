@@ -83,6 +83,7 @@ class TestHTMLNode(unittest.TestCase):
         self.assertEqual(html_node.tag, "img")
         self.assertEqual(html_node.value, None)
         self.assertEqual(html_node.props, {"src": "https://www.google.com", "alt": "Nice?"})
+        # self.assertEqual(html_node.to_html(), '<img src="https://www.google.com" alt="Nice?"><\img>')
 
 if __name__ == "__main__":
     unittest.main()
