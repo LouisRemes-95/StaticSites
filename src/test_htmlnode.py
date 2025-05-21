@@ -2,8 +2,8 @@ import unittest
 from unittest.mock import patch
 from io import StringIO
 
-
-from htmlnode import HTMLNode, LeafNode, ParentNode
+from textnode import TextNode, TextType
+from htmlnode import *
 
 
 class TestHTMLNode(unittest.TestCase):
@@ -62,6 +62,27 @@ class TestHTMLNode(unittest.TestCase):
         LeafNode(None, "Normal text"),
         ], {"href": "https://www.google.com", "target": "_blank"})
         self.assertEqual(node.to_html(), '<p href="https://www.google.com" target="_blank"><b>Bold text</b>Normal text</p>')
+
+    def test_text_node_to_html_node_TEXT(self):
+        node = TextNode("This is a text node", TextType.TEXT)
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, None)
+        self.assertEqual(html_node.value, "This is a text node")
+
+    def test_text_node_to_html_node_LINK(self):
+        node = TextNode("Click me!", TextType.LINK, "https://www.google.com")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "a")
+        self.assertEqual(html_node.value, "Click me!")
+        self.assertEqual(html_node.props, {"href": "https://www.google.com"})
+        self.assertEqual(html_node.to_html(), '<a href="https://www.google.com">Click me!</a>')
+
+    def test_text_node_to_html_node_IMAGE(self):
+        node = TextNode("Nice?", TextType.IMAGE, "https://www.google.com")
+        html_node = text_node_to_html_node(node)
+        self.assertEqual(html_node.tag, "img")
+        self.assertEqual(html_node.value, None)
+        self.assertEqual(html_node.props, {"src": "https://www.google.com", "alt": "Nice?"})
 
 if __name__ == "__main__":
     unittest.main()
