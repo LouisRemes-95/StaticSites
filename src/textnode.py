@@ -28,8 +28,8 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
     for old_node in old_nodes:
         if old_node.text_type != TextType.TEXT:
             nodes.append(old_node)
-        elif delimiter not in old_node.text:
-            raise Exception("No delimiter in node")
+        elif old_node.text.count(delimiter) % 2:
+            raise Exception("No pair of delimiter in node")
         else:
             for iter, split_node in enumerate(old_node.text.split(delimiter)):
                 if split_node:
@@ -79,5 +79,13 @@ def split_nodes_link(old_nodes):
                 nodes.append(TextNode(reamining_text, TextType.TEXT))
     return nodes
 
+def text_to_textnodes(text):
+    nodes = [TextNode(text, TextType.TEXT)]
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+    nodes = split_nodes_image(nodes)
+    nodes = split_nodes_link(nodes)
+    return nodes
 
                 
