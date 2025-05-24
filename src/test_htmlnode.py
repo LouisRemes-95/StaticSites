@@ -81,9 +81,120 @@ class TestHTMLNode(unittest.TestCase):
         node = TextNode("Nice?", TextType.IMAGE, "https://www.google.com")
         html_node = text_node_to_html_node(node)
         self.assertEqual(html_node.tag, "img")
-        self.assertEqual(html_node.value, None)
+        self.assertEqual(html_node.value, "")
         self.assertEqual(html_node.props, {"src": "https://www.google.com", "alt": "Nice?"})
-        # self.assertEqual(html_node.to_html(), '<img src="https://www.google.com" alt="Nice?"><\img>')
+
+    def test_block_to_tag_1(self):
+        block = "# This is a heading"
+        self.assertEqual(block_to_tag(block), "h1")
+
+    def test_block_to_tag_2(self):
+        block = "###### This is a heading"
+        self.assertEqual(block_to_tag(block), "h6")
+
+    def test_block_to_tag_3(self):
+        block = "```This is code```"
+        self.assertEqual(block_to_tag(block), "pre")
+
+    def test_block_to_tag_4(self):
+        block = """> This is a quote
+> And still is a quote"""
+        self.assertEqual(block_to_tag(block), "blockquote")
+
+    def test_block_to_tag_5(self):
+        block = """- This is a unordered list
+- And still is a unordered list"""
+        self.assertEqual(block_to_tag(block), "ul")
+
+    def test_block_to_tag_6(self):
+        block = """1. This is an ordered list
+2. And still is"""
+        self.assertEqual(block_to_tag(block), "ol")
+
+    def test_block_to_tag_7(self):
+        block = """1. This is an ordered list
+2.And still is"""
+        self.assertEqual(block_to_tag(block), "p")
+
+    def test_text_to_children_1(self):
+        block = "# This is a heading"
+        self.assertEqual(text_to_children(block), [LeafNode(None, "This is a heading")])
+
+    def test_text_to_children_2(self):
+        block = "```This is code```"
+        self.assertEqual(text_to_children(block), [LeafNode("code", "This is code")])
+
+    def test_text_to_children_3(self):
+        block = """> This is a quote
+> And still is a quote"""
+        self.assertEqual(text_to_children(block), [LeafNode(None, "This is a quote And still is a quote")])
+
+    def test_text_to_children_4(self):
+        block = """- This is a unordered list
+- And still is a unordered list"""
+        self.assertEqual(text_to_children(block), [ParentNode("li", [LeafNode(None, "This is a unordered list")]), ParentNode("li", [LeafNode(None, "And still is a unordered list")])])
+
+    def test_text_to_children_5(self):
+        block = """1. This is an ordered list
+2. And still is an ordered list"""
+        self.assertEqual(text_to_children(block), [ParentNode("li", [LeafNode(None, "This is an ordered list")]), ParentNode("li", [LeafNode(None, "And still is an ordered list")])])
+
+    def test_text_to_children_6(self):
+        block = """1. This is an ordered list
+2.And still is"""
+        self.assertEqual(text_to_children(block), [LeafNode(None, "1. This is an ordered list 2.And still is")])
+
+    def test_paragraphs(self):
+        md = """
+This is **bolded** paragraph
+text in a p
+tag here
+
+This is another paragraph with _italic_ text and `code` here
+
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><p>This is <b>bolded</b> paragraph text in a p tag here</p><p>This is another paragraph with <i>italic</i> text and <code>code</code> here</p></div>",
+    )
+
+    def test_codeblock(self):
+        md = """
+```
+This is text that _should_ remain
+the **same** even with inline stuff
+```
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><pre><code>This is text that _should_ remain\nthe **same** even with inline stuff\n</code></pre></div>",
+    )
+
+    def test_list_quote_image(self):
+        md = """
+- First item
+- Second item with **bold**
+- Third item
+
+> This is a quote
+
+![Alt text](https://example.com/image.png)
+"""
+
+        node = markdown_to_html_node(md)
+        html = node.to_html()
+        self.assertEqual(
+        html,
+        "<div><ul><li>First item</li><li>Second item with <b>bold</b></li><li>Third item</li></ul><blockquote>This is a quote</blockquote><p><img src=\"https://example.com/image.png\" alt=\"Alt text\"/></p></div>",
+    )
+
+    
 
 if __name__ == "__main__":
     unittest.main()

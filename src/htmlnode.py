@@ -16,6 +16,12 @@ class HTMLNode:
             return ""
         return "".join(map(lambda prop: " " + prop[0] + '="' + prop[1]  + '"', self.props.items()))
     
+    def __eq__(self, target):
+        return (self.tag == target.tag and 
+                self.value == target.value and
+                self.children == target.children and
+                self.props == target.props)
+    
     def __repr__(self):
         return f"HTMLNODE({self.tag}, {self.value}, {self.children}, {self.props})"
     
@@ -24,10 +30,15 @@ class LeafNode(HTMLNode):
         super().__init__(tag, value, props = props)
     
     def to_html(self):
-        if not self.value:
+        if self.value == None:
             raise ValueError("LeafNode has no value")
         if not self.tag:
             return self.value
+        
+        # Handle self-closing (void) HTML tags
+        void_elements = {"img"}
+        if self.tag in void_elements:
+            return f"<{self.tag}{self.props_to_html()}/>"
         return f"<{self.tag}{self.props_to_html()}>{self.value}</{self.tag}>"
 
 class ParentNode(HTMLNode):
@@ -54,7 +65,7 @@ def text_node_to_html_node(text_node):
         case TextType.LINK:
             return LeafNode("a", text_node.text, {"href": text_node.url})
         case TextType.IMAGE:
-            return LeafNode("img", None, {"src": text_node.url, "alt": text_node.text})
+            return LeafNode("img", "", {"src": text_node.url, "alt": text_node.text})
         case _:
             raise Exception("Incorrect TextNode type")
         
@@ -80,16 +91,18 @@ def block_to_tag(text):
             return "pre"
         case BlockType.PARAGRAPH:
             return "p"
+        case _:
+            raise Exception("Incorrect block type")
 
 def text_to_children(text):
     block_type = block_to_block_type(text)
     match block_type:
         case BlockType.HEADING:
             text = text.lstrip("# ")
-            return text_to_html_node(text)
+            return text_to_html_nodes(text)
         case BlockType.QUOTE:
             text = " ".join(line.strip()[2:] for line in text.split("\n"))
-            return text_to_html_node(text)
+            return text_to_html_nodes(text)
         case BlockType.UNORDERED_LIST:
             items = [line.strip()[2:] for line in text.split("\n")]
             return items_to_children(items)
@@ -97,17 +110,17 @@ def text_to_children(text):
             items = [line.strip()[3:] for line in text.split("\n")]
             return items_to_children(items)
         case BlockType.PARAGRAPH:
-            return text_to_html_node(text)
+            return text_to_html_nodes(text)
         case BlockType.CODE:
-            return text_node_to_html_node(TextNode(text, TextType.CODE))
+            return [text_node_to_html_node(TextNode(text[3:-3].lstrip(), TextType.CODE))]
         case _:
             raise Exception("Incorrect block type")
 
-def text_to_html_node(text):
+def text_to_html_nodes(text):
     return [text_node_to_html_node(text_node) for text_node in text_to_textnodes(text)]
 
 def items_to_children(items):
     children = []
     for item in items:
-        children.append(ParentNode("li", text_to_html_node(item)))
+        children.append(ParentNode("li", text_to_html_nodes(item)))
     return children
