@@ -1,4 +1,5 @@
-from textnode import TextType, TextNode
+from textnode import TextType, text_to_textnodes, TextNode
+from blocklogic import *
 
 class HTMLNode:
     def __init__(self, tag = None, value = None, children = None, props = None):
@@ -55,4 +56,58 @@ def text_node_to_html_node(text_node):
         case TextType.IMAGE:
             return LeafNode("img", None, {"src": text_node.url, "alt": text_node.text})
         case _:
-            raise Exception("Incorect TextNode type")
+            raise Exception("Incorrect TextNode type")
+        
+def markdown_to_html_node(markdown):
+    blocks = markdown_to_blocks(markdown)
+    first_children = []
+    for block in blocks:
+        first_children.append(ParentNode(block_to_tag(block), text_to_children(block)))
+    return ParentNode("div", first_children)
+
+def block_to_tag(text):
+    block_type = block_to_block_type(text)
+    match block_type:
+        case BlockType.HEADING:
+            return f"h{len(text) - len(text.lstrip("#"))}"
+        case BlockType.QUOTE:
+            return "blockquote"
+        case BlockType.UNORDERED_LIST:
+            return "ul"
+        case BlockType.ORDERED_LIST:
+            return "ol"
+        case BlockType.CODE:
+            return "pre"
+        case BlockType.PARAGRAPH:
+            return "p"
+
+def text_to_children(text):
+    block_type = block_to_block_type(text)
+    match block_type:
+        case BlockType.HEADING:
+            text = text.lstrip("# ")
+            return text_to_html_node(text)
+        case BlockType.QUOTE:
+            text = " ".join(line.strip()[2:] for line in text.split("\n"))
+            return text_to_html_node(text)
+        case BlockType.UNORDERED_LIST:
+            items = [line.strip()[2:] for line in text.split("\n")]
+            return items_to_children(items)
+        case BlockType.ORDERED_LIST:
+            items = [line.strip()[3:] for line in text.split("\n")]
+            return items_to_children(items)
+        case BlockType.PARAGRAPH:
+            return text_to_html_node(text)
+        case BlockType.CODE:
+            return text_node_to_html_node(TextNode(text, TextType.CODE))
+        case _:
+            raise Exception("Incorrect block type")
+
+def text_to_html_node(text):
+    return [text_node_to_html_node(text_node) for text_node in text_to_textnodes(text)]
+
+def items_to_children(items):
+    children = []
+    for item in items:
+        children.append(ParentNode("li", text_to_html_node(item)))
+    return children
